@@ -1,0 +1,56 @@
+name: VPN Gate SSTP 节点检测
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/30 * * * *'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: gate-check
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run SSTP probe pipeline
+        run: node pipeline/check.mjs
+        env:
+          # 云端检测端点：延迟反映「CF 边缘 → 客户端」这条真实链路。
+          # 不填则用本地直连探测（GitHub Runner 跨境到节点，数值偏大）。
+          CHECK_WORKER: ${{ secrets.CHECK_WORKER }}
+          # 云端不可用时是否退回本地探测
+          WORKER_FALLBACK: 'true'
+          # 可选：本地探测需要突破出网限制时才用到
+          DIAL_PROXY: ${{ secrets.DIAL_PROXY }}
+          CHECK_CONCURRENCY: '40'
+          CHECK_TIMEOUT_MS: '30000'
+          MAX_CHECK_NODES: '120'
+          # 可选：把节点池推送到 Worker 的 KV
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CF_KV_ID: ${{ secrets.CF_KV_ID }}
+
+      # Pages 需要先在仓库 Settings → Pages 里把 Source 设成 "GitHub Actions"。
+      # 仓库默认的 GITHUB_TOKEN 没有 repo scope，用 API 无法创建 Pages 站点
+      # （PUT /repos/{owner}/{repo}/pages 会返回 404），所以只能手动开一次。
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'public'
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

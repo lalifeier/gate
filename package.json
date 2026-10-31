@@ -1,0 +1,32 @@
+{
+  "name": "vpngate-edge",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Cloudflare Worker + Vercel：VLESS 入口，VPN Gate SSTP 家宽链式出口",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "check": "node pipeline/check.mjs",
+    "check:sstp": "node pipeline/check.mjs --limit 20",
+    "dev:worker": "wrangler dev",
+    "deploy:worker": "wrangler deploy",
+    "dev": "vercel dev",
+    "deploy:vercel": "vercel deploy --prod",
+    "build": "echo no-build",
+    "test": "node core/test-schema.mjs && node core/test-runtime.mjs && node core/test-sub.mjs && node core/selftest.mjs && node core/test-early-data.mjs",
+    "test:schema": "node core/test-schema.mjs",
+    "test:runtime": "node core/test-runtime.mjs",
+    "test:pin": "node core/test-node-pin.mjs",
+    "test:remote": "node core/test-remote.mjs",
+    "test:matrix": "node core/test-matrix.mjs"
+  },
+  "dependencies": {
+    "ws": "^8.22.0"
+  },
+  "devDependencies": {
+    "vercel": "^41.0.0",
+    "wrangler": "^4.0.0"
+  }
+}

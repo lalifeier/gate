@@ -1,0 +1,11 @@
+node_modules/
+.vercel/
+.wrangler/
+public/data.json
+public/nodes.txt
+public/nodes.json
+core/.tmp/
+*.log
+.DS_Store
+.env
+.env.local

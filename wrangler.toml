@@ -1,0 +1,55 @@
+name = "gate"
+main = "worker/src/index.js"
+compatibility_date = "2025-11-04"
+compatibility_flags = ["nodejs_compat"]
+
+# 开启 Workers WebSocket 长连接所必需的（默认即支持，这里显式声明兼容日期即可）
+
+[vars]
+# UUID / ADMIN 用 secret 注入，不要写进仓库：
+#   npx wrangler secret put UUID
+#   npx wrangler secret put ADMIN
+CHAIN = "always"
+SSTP_USER = "vpn"
+SSTP_PASS = "vpn"
+PROBE_TARGET = "ip-api.com"
+SSTP_TIMEOUT_MS = "12000"
+PROBE_TIMEOUT_MS = "15000"
+
+# 节点池外链。定时任务把最新快照发布到 GitHub Pages，
+# Worker 在 KV 未绑定时从这里拿；Vercel 侧也能用同一个变量。
+#
+# ⚠ 故意不放在 [vars] 里：真实地址不进公开仓库。
+# 用 secret 注入（跨 deploy 保留）：
+#   npx wrangler secret put POOL_URL
+# 或者一次性覆盖：
+#   npx wrangler deploy --var "POOL_URL:https://<pages-host>/gate/nodes.json"
+#
+# 注意：secret 与同名 var 不能共存，所以这里绝不能写 POOL_URL = "..."。
+
+# 池缓存 TTL（毫秒）。热路径不会每次建连都去拉外链。
+POOL_CACHE_TTL_MS = "90000"
+# 外链拉取的超时（毫秒）
+POOL_FETCH_TIMEOUT_MS = "4000"
+
+# 站点/权限
+EDGE_HOSTS = ""
+NODE_HOST = ""
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+# 必须为 true：否则静态资源会抢先响应 "/"，把 WebSocket 升级请求吃掉。
+run_worker_first = true
+# 关闭 "/index.html" -> "/" 的规范化跳转。
+# 否则 Worker 取 /index.html 会收到 307 回 "/"，浏览器跟着跳回来就是
+# ERR_TOO_MANY_REDIRECTS（"重定向的次数过多"）。
+html_handling = "none"
+
+#[[kv_namespaces]]
+#binding = "KV"
+#id = "REPLACE-WITH-KV-ID"
+
+#[[routes]]
+#pattern = "edt.example.com/*"
+#zone_name = "example.com"
